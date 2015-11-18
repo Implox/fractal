@@ -1,0 +1,8 @@
+[package]
+name = "fractal"
+version = "0.1.0"
+authors = ["Impl0x <alexmflores@gmail.com>"]
+
+[dependencies]
+bmp = "*"
+num = "*"
