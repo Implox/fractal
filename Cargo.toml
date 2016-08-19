@@ -6,3 +6,5 @@ authors = ["Impl0x <alexmflores@gmail.com>"]
 [dependencies]
 bmp = "*"
 num = "*"
+getopts = "*"
+rand = "0.3"

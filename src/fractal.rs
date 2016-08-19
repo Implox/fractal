@@ -1,6 +1,9 @@
 extern crate num;
 use self::num::complex::Complex;
 
+
+pub type FractalEval = fn(Complex<f64>, i32) -> i32;
+
 /// Performs the "escape time" algorithm to evaluate the mandelbrot set,
 /// returning the number of iterations required for a given point to 
 /// escape the bounds of the set. Points that are in the set never escape, 
@@ -38,4 +41,3 @@ pub fn eval_julia(pt: Complex<f64>, max: i32) -> i32 {
     }
     return i;
 }
-

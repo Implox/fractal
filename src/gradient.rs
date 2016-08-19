@@ -1,6 +1,11 @@
 extern crate bmp;
 
-use self::bmp::Pixel;
+use bmp::Pixel;
+
+#[macro_export]
+macro_rules! pix {
+    ($r: expr, $g: expr, $b: expr) => (Pixel { r: $r, g: $g, b: $b })
+}
 
 pub struct Stop {
     pub offset: f32,
@@ -25,7 +30,7 @@ pub struct Gradient {
 
 impl Gradient {
     pub fn new(period: f32, initial: Pixel, stops: Vec<Stop>, end: Pixel) -> Gradient {
-        let blank = Pixel { r: 0, g: 0, b: 0 };
+        let blank = pix!(0, 0, 0);
         let d = 1.0 / (CACHE_SIZE as f32);
         let mut cache: [Pixel; CACHE_SIZE] = [blank; CACHE_SIZE];
         for t in 0..CACHE_SIZE-1 {
@@ -66,9 +71,9 @@ impl Gradient {
         }
         let af = 1.0 - amount;
         let bf = amount;
-        Pixel { r: mix(a.r, af, b.r, bf),
-                g: mix(a.g, af, b.g, bf),
-                b: mix(a.b, af, b.b, bf) }
+        pix!(mix(a.r, af, b.r, bf),
+             mix(a.g, af, b.g, bf),
+             mix(a.b, af, b.b, bf))
     }
 
     pub fn get_color(&self, iters: f32) -> Pixel {
