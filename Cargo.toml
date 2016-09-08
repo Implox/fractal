@@ -5,4 +5,4 @@ authors = ["Impl0x <alexmflores@gmail.com>"]
 
 [dependencies]
 bmp = "*"
-num = "*"
+num = "0.1"

@@ -9,17 +9,17 @@ use bmp::{Image, Pixel};
 use num::complex::Complex;
 use gradient::{Gradient, Stop};
 use render::{Camera};
-use fractal::{eval_julia, eval_mandelbrot};
+use fractal::*;
 
 use std::thread;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
 
-const SCALE:u32 = 1;
-const WIDTH:u32  = 3840 * SCALE;
-const HEIGHT:u32 = 2160 * SCALE; 
+const SCALE:u32 = 4;
+const WIDTH:u32  = 1920 * SCALE;
+const HEIGHT:u32 = 1080 * SCALE; 
 
-const MAX_ITERS:i32 = 1000;
+const MAX_ITERS:u32 = 1000;
 
 fn pix(r: u8, g: u8, b: u8) -> Pixel {
     Pixel { r: r, g: g, b: b }
@@ -31,14 +31,14 @@ fn get_row_points(origin: Complex<f64>, p_size: f64, col: u32) -> Vec<Complex<f6
     let i = origin.im + p_size * (col as f64);
     for x in 0..WIDTH {
         let r = origin.re + p_size * (x as f64);
-        points.push(Complex::new(r, i).scale(4.0));
+        points.push(Complex::new(r, i));
     }
     return points;
 }
 
 fn make_image_parallel<F>(cam: &Camera, grad: Gradient, eval: Arc<F>) -> Image 
-where F: 'static + Send + Sync + Fn(Complex<f64>, i32) -> i32 {
-    let n_threads = 4;
+where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> u32 {
+    let n_threads = 2;
 
     let (origin, p_size) = cam.find_origin_and_pixel_size(WIDTH, HEIGHT);
     let (agg_chan_in, agg_chan_out) = channel();
@@ -82,7 +82,7 @@ where F: 'static + Send + Sync + Fn(Complex<f64>, i32) -> i32 {
     return img;
 }
 
-fn make_image(cam: &Camera, grad: Gradient, eval: &Fn(Complex<f64>, i32) -> i32) -> Image {
+fn make_image(cam: &Camera, grad: Gradient, eval: &Fn(Complex<f64>, u32) -> u32) -> Image {
     let mut img = Image::new(WIDTH, HEIGHT);
     let (tl, p_size) = cam.find_origin_and_pixel_size(WIDTH, HEIGHT);
     for y in 0..HEIGHT {
@@ -109,8 +109,8 @@ fn main() {
         Gradient::new(period, initial, stops, end)
     };
     
-    let cam = Camera::new(Complex::new(-0.0, 0.0), 1.15);
+    let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
     //let img = make_image(&cam, grad, &eval_mandelbrot);
     let img = make_image_parallel(&cam, grad, Arc::new(eval_mandelbrot));
-    let _ = img.save("img.bmp");
+    let _ = img.save("img2.bmp");
 }
