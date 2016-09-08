@@ -2,18 +2,17 @@ extern crate rand;
 
 use bmp::{Image, Pixel};
 use num::complex::Complex;
-use getopts::Options;
 use std::env;
-use gradient::{Gradient, Stop};
+use std::collections::HashMap;
+use fractal::{eval_mandelbrot};
 use render::{Camera};
-use fractal::{FractalEval, eval_mandelbrot, eval_julia};
 
 use rand::Rng;
 use std::cmp::max;
 
-const SCALE:u32 = 2;
-const WIDTH:u32 = 1920 * SCALE;
-const HEIGHT:u32 = 1080 * SCALE; 
+const SCALE:u32 = 4;
+const WIDTH:u32 = 1600 * SCALE;
+const HEIGHT:u32 = 900 * SCALE; 
 
 type Trajectory = Vec<Complex<f64>>;
 
@@ -38,7 +37,12 @@ fn init_hist() -> Histogram {
 }
 
 #[inline]
-fn emit_mandelbrot_trajectory(pt: Complex<f64>, max: usize) -> Trajectory {
+fn emit_mandelbrot_trajectory(pt: Complex<f64>, max: usize, min: usize) -> Trajectory {
+    let num_iters = eval_mandelbrot(pt, max as i32) as usize;
+    if num_iters == max || num_iters < min {
+        return vec![];
+    }
+
     let mut traj = Vec::new();
     let mut iter = 0;
     let mut zr = pt.re;
@@ -53,12 +57,16 @@ fn emit_mandelbrot_trajectory(pt: Complex<f64>, max: usize) -> Trajectory {
             zr = zr - zis + pt.re;
             zi = (zi * 2.0 * ozr) + pt.im;
 
-            traj.push(Complex::new(zr, zi));
+            let c = Complex::new(zr, zi);
+            let c_neg = Complex::new(zr, -zi);
+            traj.push(c);
+            traj.push(c_neg);
             iter = iter + 1;
         } else { 
             return traj; 
         }
     }
+
     return vec![];
 }
 
@@ -75,80 +83,47 @@ fn to_discrete(cam: &Camera, pt: Complex<f64>) -> Coordinate {
 }
 
 #[inline]
-fn post_process(img: &mut Image) {
-    fn window_avg(x: u32, y:u32, r: u32, img: Image) {
-        let mut values = Vec::new();
-        for i in 1..r {
-            for j in 1..r {
-                if x + i >= img.get_width() || y + j >= img.get_height() {
-                    values.push(pix!(0,0,0))
-                } else { 
-                    values.push(img.get_pixel(x+i, y+j)); 
-                }
+fn post_process(hist: &mut Histogram) {
+    let mut color_hist = Vec::new();
 
-                if (x as i32 - i as i32) < 0 || (y as i32 - j as i32) < 0 {
-                    values.push(pix!(0,0,0))
+    for x in 0..WIDTH {
+        for y in 0..HEIGHT {
+            color_hist.push(hist[x as usize][y as usize]);
+        }
+    }
+    color_hist.sort();
+    color_hist.dedup();
+
+    println!("Ping!");
+    for x in 0..WIDTH {
+        for y in 0..HEIGHT {
+            let mut index = 0;
+            while index < color_hist.len() {
+                if color_hist[index] == hist[x as usize][y as usize] {
+                    hist[x as usize][y as usize] = index as u32;
+                    break;
                 } else {
-                    values.push(img.get_pixel(x-i, y-j));
+                    index += 1;
                 }
             }
         }
-    }
-
-    let mut avg_r = 0;
-    let mut avg_g = 0;
-    let mut avg_b = 0;
-    {
-        let mut total_r: u64 = 0;
-        let mut total_g: u64 = 0;
-        let mut total_b: u64 = 0;
-        let mut sum_r: u64 = 0;
-        let mut sum_g: u64 = 0;
-        let mut sum_b: u64 = 0;
-        for (x, y) in img.coordinates() {
-            let Pixel{r, g, b} = img.get_pixel(x, y);
-            if r > 0 {
-                sum_r += r as u64;
-                total_r += 1;
-            }
-            if g > 0 {
-                sum_g += g as u64;
-                total_g += 1;
-            }
-            if b > 0 {
-                sum_b += b as u64;
-                total_b += 1;
-            }
-        }
-        avg_r = (sum_r / total_r) as u8;
-        avg_g = (sum_g / total_g) as u8;
-        avg_b = (sum_b / total_b) as u8;
-    }
-
-    let adjust = |c, avg| if c > avg { c - avg } else { 0 };
-    let scale = |c| (c as f32).log2() / 8.0 * 255.0;
-
-    for (x, y) in img.coordinates() {
-        let Pixel{r, g, b} = img.get_pixel(x, y);
-        let r = scale(adjust(r, avg_r));
-        let g = scale(adjust(g, avg_g));
-        let b = scale(adjust(b, avg_b));
-        img.set_pixel(x, y, pix!(r as u8, g as u8, b as u8));
     }
 }
 
-fn make_hist(cam: &Camera, samples: usize, theta: usize) -> Histogram {
+fn make_hist(cam: &Camera, samples: usize, theta: usize, min: usize) -> Histogram {
     let mut rng = rand::thread_rng();
 
     let mut hist = init_hist();
 
-    let mut max: u32 = 0;
+    //let prev_samples = HashMap::new();
+
     for _ in 0..samples {
         let rand_x = rng.gen::<u32>() % WIDTH;
         let rand_y = rng.gen::<u32>() % HEIGHT;
 
+
         let pt = cam.transform(rand_x as i32, rand_y as i32, WIDTH as i32, HEIGHT as i32);
-        let traj = emit_mandelbrot_trajectory(pt, theta);
+        let traj = emit_mandelbrot_trajectory(pt, theta, min);
 
         for traj_pt in traj {
             let (x, y) = to_discrete(&cam, traj_pt);
@@ -156,19 +131,27 @@ fn make_hist(cam: &Camera, samples: usize, theta: usize) -> Histogram {
                 let x = x as usize;
                 let y = y as usize;
                 let v = hist[x][y] + 1;
-                if v > max { max = v }
                 hist[x][y] = v;
+            }
+        }
+    }
+
+    post_process(&mut hist);
+
+    let mut max = 0;
+    for x in 0..WIDTH {
+        for y in 0..HEIGHT {
+            if hist[x as usize][y as usize] > max {
+                max = hist[x as usize][y as usize];
             }
         }
     }
 
     for x in 0..WIDTH {
         for y in 0..HEIGHT {
-            let v = hist[x as usize][y as usize];
-            let vFloat = v as f64;
-            let maxFloat = max as f64;
-            let ratio = vFloat / maxFloat;
-            hist[x as usize][y as usize] = (ratio * 255.0) as u32;
+            let sqrt_max = (max as f64).sqrt();
+            let sqrt_val = (hist[x as usize][y as usize] as f64).sqrt();
+            hist[x as usize][y as usize] = (255.0 * (sqrt_val / sqrt_max)).trunc() as u32;
         }
     }
 
@@ -179,19 +162,19 @@ fn make_render(cam: Camera, samples: usize, mode: RenderMode) -> Image {
     let mut img = Image::new(WIDTH, HEIGHT);
     match mode {
         RenderMode::Greyscale(theta) => {
-            let hist = make_hist(&cam, samples, theta);
+            let hist = make_hist(&cam, samples, theta, 10000);
             for x in 0..WIDTH {
                 for y in 0..HEIGHT {
-                    let v = hist[x as usize][y as usize];
+                    let mut v = hist[x as usize][y as usize];
                     img.set_pixel(x, y, pix!(v as u8, v as u8, v as u8));
                 }
             }
             return img;
         },
         RenderMode::RGB(theta_r, theta_g, theta_b) => {
-            let hist_r = make_hist(&cam, samples, theta_r);
-            let hist_g = make_hist(&cam, samples, theta_g);
-            let hist_b = make_hist(&cam, samples, theta_b);
+            let hist_r = make_hist(&cam, samples, theta_r, theta_r / 20);
+            let hist_g = make_hist(&cam, samples, theta_g, theta_g / 20);
+            let hist_b = make_hist(&cam, samples, theta_b, theta_b / 20);
 
             for x in 0..WIDTH {
                 for y in 0..HEIGHT {
@@ -207,8 +190,8 @@ fn make_render(cam: Camera, samples: usize, mode: RenderMode) -> Image {
 }
 
 pub fn make_buddha(cam: Camera, samples: usize) -> Image {
-    let img = make_render(cam, samples, RenderMode::Greyscale(2000));
-    //let img = make_render(cam, samples, RenderMode::RGB(7000, 3000, 500));
+    let img = make_render(cam, samples, RenderMode::Greyscale(1000000));
+    //let img = make_render(cam, samples, RenderMode::RGB(12000, 9000, 8000));
 
     //post_process(&mut img);
     return img;

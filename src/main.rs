@@ -87,9 +87,9 @@ fn main() {
             Gradient::new(period, initial, stops, end)
         };
 
-        let cam = Camera::new(Complex::new(0.0, 0.0), -1.0);
+        let cam = Camera::new(Complex::new(-0.4, 0.0), -1.0);
         //let img = make_image(cam, grad, eval);
-        let img = make_buddha(cam, 100000000);
+        let img = make_buddha(cam, 1000000);
         let _ = img.save(&format!("{}.bmp", out_file));
     }
 }

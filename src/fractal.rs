@@ -10,7 +10,6 @@ pub type FractalEval = fn(Complex<f64>, i32) -> i32;
 /// and will return the given max value.
 pub fn eval_mandelbrot(pt: Complex<f64>, max: i32) -> i32 {
     let mut iter = 0;
-    let pt = pt + Complex::new(-0.6, 0.0); // offset for aesthetics
     let mut zr = pt.re;
     let mut zi = pt.im;
 
