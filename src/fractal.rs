@@ -21,18 +21,20 @@ pub fn eval_mandelbrot(pt: Complex<f64>, max: u32) -> f32 {
 
     let mut iter = 0;
     let mut z = Complex64::new(0.0, 0.0);
-    while z.re*z.re + z.im*z.im < 16.0 && iter < max {
+    while z.re*z.re + z.im*z.im < 4.0 && iter < max {
         z = z*z + pt;
         iter += 1;
     }
 
     if iter < max {
-        let log2: f64 = (2.0f64).log(10.0);
-        let log_zn = (z.re*z.re + z.im*z.im).log(10.0) / log2;
-        let nu = (log_zn / log2).log(10.0) / log2;
+        let log2: f64 = (2f64).ln();
+        let log_zn = (z.re*z.re + z.im*z.im).ln() / log2;
+        let nu = (log_zn / log2).ln() / log2;
         return ((iter as f64) + 1.0 - nu) as f32;
     }
-    return iter as f32;
+    else {
+        return iter as f32;
+    }
 }
 
 /// Performs the same escape-time algorithm as above, but for the julia set
