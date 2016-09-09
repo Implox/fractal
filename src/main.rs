@@ -38,7 +38,7 @@ fn get_row_points(origin: Complex<f64>, p_size: f64, col: usize) -> Vec<Complex<
 
 fn make_plot<F>(cam: &Camera, eval: Arc<F>) -> Vec<Vec<f32>> 
 where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
-    let n_threads = 2;
+    let n_threads = 4;
 
     let (origin, p_size) = cam.find_origin_and_pixel_size(WIDTH as u32, HEIGHT as u32);
     let (agg_chan_in, agg_chan_out) = channel();
@@ -120,7 +120,7 @@ fn main() {
         let period = MAX_ITERS as f32;
         let initial = pix(0, 0, 0);
         let stops = vec![
-            Stop::new(0.1, pix(255,   0,   0)),
+            Stop::new(0.05, pix(255,   0,   0)),
             Stop::new(0.2, pix(255, 255,   0)),
             Stop::new(0.3, pix(  0, 255,   0)),
             Stop::new(0.4, pix(  0, 255, 255)),

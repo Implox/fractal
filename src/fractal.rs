@@ -27,9 +27,9 @@ pub fn eval_mandelbrot(pt: Complex<f64>, max: u32) -> f32 {
     }
 
     if iter < max {
-        let log2: f64 = (2.0f64).log(10.0);
-        let log_zn = (z.re*z.re + z.im*z.im).log(10.0) / log2;
-        let nu = (log_zn / log2).log(10.0) / log2;
+        let log2: f64 = (2f64).ln();
+        let log_zn = (z.re*z.re + z.im*z.im).ln() / log2;
+        let nu = (log_zn / log2).ln() / log2;
         return ((iter as f64) + 1.0 - nu) as f32;
     }
     return iter as f32;
