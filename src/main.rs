@@ -16,8 +16,8 @@ use std::sync::Arc;
 use std::sync::mpsc::channel;
 
 const SCALE:usize = 1;
-const WIDTH:usize  = 2880 * SCALE;
-const HEIGHT:usize = 1800 * SCALE; 
+const WIDTH:usize  = 1920 * SCALE;
+const HEIGHT:usize = 1080 * SCALE; 
 
 const MAX_ITERS:u32 = 1000;
 
@@ -107,7 +107,7 @@ fn make_image(plot: &Vec<Vec<f32>>, hist: &[u32], grad: Gradient) -> Image {
             for i in 0..plot[x][y] {
                 hue += hist[i as usize] as f32 / total;
             }*/
-            let hue = plot[x][y] as f32 / MAX_ITERS as f32;
+            let hue = (plot[x][y]).clone().into();
             let pixel = grad.get_color(hue);
             img.set_pixel(x as u32, y as u32, pixel);
         }
@@ -117,10 +117,10 @@ fn make_image(plot: &Vec<Vec<f32>>, hist: &[u32], grad: Gradient) -> Image {
 
 fn main() {
     let grad = {
-        let period = 0.5;
+        let period = MAX_ITERS as f32;
         let initial = pix(0, 0, 0);
         let stops = vec![
-            Stop::new(0.05, pix(255,   0,   0)),
+            Stop::new(0.1, pix(255,   0,   0)),
             Stop::new(0.2, pix(255, 255,   0)),
             Stop::new(0.3, pix(  0, 255,   0)),
             Stop::new(0.4, pix(  0, 255, 255)),
@@ -133,9 +133,9 @@ fn main() {
         Gradient::new(period, initial, stops, end)
     };
     
-    let cam = Camera::new(Complex::new(-0.0, 0.0), -1.0);
-    let plot = make_plot(&cam, Arc::new(eval_julia));
+    let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
+    let plot = make_plot(&cam, Arc::new(eval_mandelbrot));
     //let hist = &(calc_hist(&plot))[..];
     let img = make_image(&plot, &(vec![])[..], grad);
-    let _ = img.save("img-smooth-large.bmp");
+    let _ = img.save("img-smooth.bmp");
 }
