@@ -1,5 +1,6 @@
 extern crate bmp;
 
+use num::Float;
 use self::bmp::Pixel;
 
 pub struct Stop {
@@ -28,7 +29,7 @@ impl Gradient {
         let blank = Pixel { r: 0, g: 0, b: 0 };
         let d = 1.0 / (CACHE_SIZE as f32);
         let mut cache: [Pixel; CACHE_SIZE] = [blank; CACHE_SIZE];
-        for t in 0..CACHE_SIZE-1 {
+        for t in 0..CACHE_SIZE {
             cache[t] = Gradient::get_period_color(initial, &stops, (t as f32) * d);
         }
 
