@@ -22,6 +22,8 @@ pub fn eval_mandelbrot(pt: Complex<f64>, max: u32) -> u32 {
     let mut iter = 0;
     let mut z = pt;
     while z.re*z.re + z.im*z.im < 4.0 && iter < max {
+        z.re = z.re.abs();
+        z.im = z.im.abs();
         z = z*z + pt;
         iter += 1;
     }

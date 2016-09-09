@@ -38,7 +38,7 @@ fn get_row_points(origin: Complex<f64>, p_size: f64, col: u32) -> Vec<Complex<f6
 
 fn make_image_parallel<F>(cam: &Camera, grad: Gradient, eval: Arc<F>) -> Image 
 where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> u32 {
-    let n_threads = 2;
+    let n_threads = 8;
 
     let (origin, p_size) = cam.find_origin_and_pixel_size(WIDTH, HEIGHT);
     let (agg_chan_in, agg_chan_out) = channel();
@@ -109,8 +109,9 @@ fn main() {
         Gradient::new(period, initial, stops, end)
     };
     
-    let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
+    //let cam = Camera::new(Complex::new(-1.7, -0.05), 3.0);
+    let cam = Camera::new(Complex::new(0.0, 0.0), -2.0);
     //let img = make_image(&cam, grad, &eval_mandelbrot);
     let img = make_image_parallel(&cam, grad, Arc::new(eval_mandelbrot));
-    let _ = img.save("img2.bmp");
+    let _ = img.save("img.bmp");
 }

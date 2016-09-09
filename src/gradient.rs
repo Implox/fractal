@@ -13,7 +13,7 @@ impl Stop {
     }
 }
 
-const CACHE_SIZE: usize = 100;
+const CACHE_SIZE: usize = 10000;
 
 pub struct Gradient {
     pub period: f32,
