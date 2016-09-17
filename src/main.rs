@@ -107,7 +107,7 @@ fn make_image(plot: &Vec<Vec<f32>>, hist: &[u32], grad: Gradient) -> Image {
             for i in 0..plot[x][y] {
                 hue += hist[i as usize] as f32 / total;
             }*/
-            let hue = (plot[x][y]).clone().into();
+            let hue = (plot[x][y]) as f32;
             let pixel = grad.get_color(hue);
             img.set_pixel(x as u32, y as u32, pixel);
         }
@@ -128,7 +128,7 @@ fn main() {
             Stop::new(0.6, pix(  0, 255, 255)),
             Stop::new(0.7, pix(  0, 255,   0)),
             Stop::new(0.8, pix(255, 255,   0)),
-            Stop::new(0.9, pix(255,   0,   0))];
+            Stop::new(0.825, pix(255,   0,   0))];
         let end = pix(0, 0, 0);
         Gradient::new(period, initial, stops, end)
     };
