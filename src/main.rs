@@ -15,7 +15,7 @@ use std::thread;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
 
-const SCALE:usize = 1;
+const SCALE:usize = 2;
 const WIDTH:usize  = 1920 * SCALE;
 const HEIGHT:usize = 1080 * SCALE; 
 
@@ -38,7 +38,7 @@ fn get_row_points(origin: Complex<f64>, p_size: f64, col: usize) -> Vec<Complex<
 
 fn make_plot<F>(cam: &Camera, eval: Arc<F>) -> Vec<Vec<f32>> 
 where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
-    let n_threads = 4;
+    let n_threads = 2;
 
     let (origin, p_size) = cam.find_origin_and_pixel_size(WIDTH as u32, HEIGHT as u32);
     let (agg_chan_in, agg_chan_out) = channel();
@@ -71,7 +71,7 @@ where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
     for _ in 0..HEIGHT {
         let result = agg_chan_out.recv().unwrap();
         for (x, y, iters) in result {
-            plot[x as usize][y as usize] = iters.into();
+            plot[x as usize][y as usize] = iters;
         }
     }
 
@@ -84,30 +84,11 @@ where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
     return plot;
 }
 
-fn calc_hist(plot: &Vec<Vec<u32>>) -> Vec<u32> {
-    let mut hist: Vec<u32> = (0..MAX_ITERS+1).map(|_| 0).collect();
-    for x in 0..WIDTH {
-        for y in 0..HEIGHT {
-            hist[plot[x][y] as usize] += 1;
-        }
-    }
-    return hist;
-}
-
-fn make_image(plot: &Vec<Vec<f32>>, hist: &[u32], grad: Gradient) -> Image {
-    /*let mut total = 0.0;
-    for i in 0..MAX_ITERS {
-        total += hist[i as usize] as f32
-    }*/
-
+fn make_image(plot: &Vec<Vec<f32>>, grad: Gradient) -> Image {
     let mut img = Image::new(WIDTH as u32, HEIGHT as u32);
     for y in 0..HEIGHT {
         for x in 0..WIDTH {
-            /*let mut hue = 0.0;
-            for i in 0..plot[x][y] {
-                hue += hist[i as usize] as f32 / total;
-            }*/
-            let hue = (plot[x][y]) as f32;
+            let hue = plot[x][y];
             let pixel = grad.get_color(hue);
             img.set_pixel(x as u32, y as u32, pixel);
         }
@@ -116,26 +97,21 @@ fn make_image(plot: &Vec<Vec<f32>>, hist: &[u32], grad: Gradient) -> Image {
 }
 
 fn main() {
-    let grad = {
-        let period = MAX_ITERS as f32;
-        let initial = pix(0, 0, 0);
-        let stops = vec![
-            Stop::new(0.05, pix(255,   0,   0)),
-            Stop::new(0.2, pix(255, 255,   0)),
-            Stop::new(0.3, pix(  0, 255,   0)),
-            Stop::new(0.4, pix(  0, 255, 255)),
-            Stop::new(0.5, pix(  0,   0, 255)),
-            Stop::new(0.6, pix(  0, 255, 255)),
-            Stop::new(0.7, pix(  0, 255,   0)),
-            Stop::new(0.8, pix(255, 255,   0)),
-            Stop::new(0.825, pix(255,   0,   0))];
-        let end = pix(0, 0, 0);
-        Gradient::new(period, initial, stops, end)
-    };
-    
     let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
     let plot = make_plot(&cam, Arc::new(eval_mandelbrot));
-    //let hist = &(calc_hist(&plot))[..];
-    let img = make_image(&plot, &(vec![])[..], grad);
-    let _ = img.save("img-smooth.bmp");
+
+    let grad = {
+        let initial = pix(0, 0, 0);
+        let stops = vec![
+            Stop::new(0.025, pix(255,   0,   0)),
+            Stop::new(0.050, pix(255, 255,   0)),
+            Stop::new(0.100, pix(  0, 255,   0)),
+            Stop::new(0.105, pix(  0, 255, 255)),
+            Stop::new(0.110, pix(  0,   0, 255)),
+        ];
+        Gradient::new(initial, stops, 10000)
+    };
+    
+    let img = make_image(&plot, grad);
+    let _ = img.save("img.bmp");
 }

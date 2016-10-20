@@ -15,27 +15,25 @@ pub fn check_cardioid(pt: Complex<f64>) -> bool {
 /// escape the bounds of the set. Points that are in the set never escape, 
 /// and will return the given max value.
 pub fn eval_mandelbrot(pt: Complex<f64>, max: u32) -> f32 {
+    let max = max as f64;
+
     if check_cardioid(pt) { 
-        return max as f32;
-    } else if pt.re < -2.5 || pt.re > 1.0 || pt.im < -1.0 || pt.im > 1.0 {
-        return 0.0;
+        return 1f32;
     }
 
+    let bound_radius = (1 << 16) as f64;
     let mut iter = 0f64;
     let mut z = Complex64::new(0.0, 0.0);
-    while z.re*z.re + z.im*z.im < (1 << 16) as f64 && iter < max as f64 {
+    while z.re*z.re + z.im*z.im < bound_radius && iter < max {
         z = z*z + pt;
         iter += 1.0;
     }
 
     if iter < max as f64 {
-        let log2: f64 = (2f64).ln();
-        let log_zn = (z.re*z.re + z.im*z.im).ln() / 2.0;
-        let nu = (log_zn / log2).ln() / log2;
-        iter = iter + 1.0 - nu;
-        return (iter + 1.0 - nu) as f32;
+        iter += 1.0 - (z.norm().ln()).ln() / (2f64).ln();
     }
-    return iter as f32;
+    
+    return (iter / max) as f32;
 }
 
 /// Performs the same escape-time algorithm as above, but for the julia set

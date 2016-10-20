@@ -14,39 +14,32 @@ impl Stop {
     }
 }
 
-const CACHE_SIZE: usize = 10000;
-
 pub struct Gradient {
-    pub period: f32,
     pub initial: Pixel,
     pub stops: Vec<Stop>,
-    pub end: Pixel,
-    cache: [Pixel; CACHE_SIZE]
+    cache: Vec<Pixel>,
 }
 
 impl Gradient {
-    pub fn new(period: f32, initial: Pixel, stops: Vec<Stop>, end: Pixel) -> Gradient {
-        let blank = Pixel { r: 0, g: 0, b: 0 };
-        let d = 1.0 / (CACHE_SIZE as f32);
-        let mut cache: [Pixel; CACHE_SIZE] = [blank; CACHE_SIZE];
-        for t in 0..CACHE_SIZE {
-            cache[t] = Gradient::get_period_color(initial, &stops, (t as f32) * d);
-        }
+    pub fn new(initial: Pixel, stops: Vec<Stop>, cache_size: usize) -> Gradient {
+        let d = 1.0 / (cache_size as f32);
+        let mut cache = Vec::with_capacity(cache_size);
+        /*for t in 0..cache_size {
+            cache.push(Gradient::get_color(initial, &stops, (t as f32) * d));
+        }*/
 
         Gradient {
-            period: period,
             initial: initial,
             stops: stops,
-            end: end,
             cache: cache
         }
     }
 
-    fn get_period_color(initial: Pixel, stops: &[Stop], offset: f32) -> Pixel {
-        let mut prev = initial;;
+    pub fn get_color(&self, offset: f32) -> Pixel {
+        let mut prev = self.initial;;
         let mut prev_offset = 0.0;
-        for t in 0..stops.len() {
-            let ref stop = stops[t];
+        for t in 0..self.stops.len() {
+            let ref stop = self.stops[t];
             let next = stop.color;
             let next_offset = stop.offset;
             if offset < next_offset {
@@ -57,8 +50,10 @@ impl Gradient {
                 prev_offset = next_offset;
             }
         }
+
+        // Default value
         let amount = (offset - prev_offset) / (1.0 - prev_offset);
-        return Gradient::mix_color(prev, initial, amount);
+        return Gradient::mix_color(prev, self.initial, amount);
     }
 
     fn mix_color(a: Pixel, b: Pixel, amount: f32) -> Pixel {
@@ -72,9 +67,9 @@ impl Gradient {
                 b: mix(a.b, af, b.b, bf) }
     }
 
-    pub fn get_color(&self, iters: f32) -> Pixel {
-        let scale = (CACHE_SIZE as f32) / self.period;
-        let index = (iters % self.period) * scale;
+    pub fn _get_color(&self, iters: f32) -> Pixel {
+        //let scale = (CACHE_SIZE as f32) / self.period;
+        let index = iters; //% self.period;
         return self.cache[index as usize];
     }
 }
