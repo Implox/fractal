@@ -15,7 +15,7 @@ use std::thread;
 use std::sync::Arc;
 use std::sync::mpsc::channel;
 
-const SCALE:usize = 2;
+const SCALE:usize = 4;
 const WIDTH:usize  = 1920 * SCALE;
 const HEIGHT:usize = 1080 * SCALE; 
 
@@ -97,9 +97,6 @@ fn make_image(plot: &Vec<Vec<f32>>, grad: Gradient) -> Image {
 }
 
 fn main() {
-    let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
-    let plot = make_plot(&cam, Arc::new(eval_mandelbrot));
-
     let grad = {
         let initial = pix(0, 0, 0);
         let stops = vec![
@@ -108,10 +105,14 @@ fn main() {
             Stop::new(0.100, pix(  0, 255,   0)),
             Stop::new(0.105, pix(  0, 255, 255)),
             Stop::new(0.110, pix(  0,   0, 255)),
+            Stop::new(0.200, pix(255,   0,   0)),
         ];
-        Gradient::new(initial, stops, 10000)
+        Gradient::new(initial, stops).build_cache(10000)
     };
     
+    let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
+    let plot = make_plot(&cam, Arc::new(eval_mandelbrot));
+
     let img = make_image(&plot, grad);
     let _ = img.save("img.bmp");
 }
