@@ -4,5 +4,6 @@ version = "0.1.0"
 authors = ["Impl0x <alexmflores@gmail.com>"]
 
 [dependencies]
-bmp = "*"
+bmp = "0.1"
 num = "0.1"
+rayon = "0.4"

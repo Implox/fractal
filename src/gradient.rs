@@ -1,6 +1,5 @@
 extern crate bmp;
 
-use num::Float;
 use self::bmp::Pixel;
 use std::cmp;
 
