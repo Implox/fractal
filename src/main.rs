@@ -12,10 +12,7 @@ use num::complex::Complex;
 use gradient::{Gradient, Stop};
 use render::{Camera};
 use fractal::*;
-
-use std::thread;
 use std::sync::Arc;
-use std::sync::mpsc::channel;
 
 const SCALE:usize = 2;
 const WIDTH:usize  = 1920 * SCALE;
@@ -27,7 +24,7 @@ fn pix(r: u8, g: u8, b: u8) -> Pixel {
     Pixel { r: r, g: g, b: b }
 }
 
-fn make_plot_rayon<F>(cam: &Camera, eval: Arc<F>) -> Vec<Vec<f32>> 
+fn make_plot<F>(cam: &Camera, eval: Arc<F>) -> Vec<Vec<f32>> 
 where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
     let (origin, p_size) = cam.find_origin_and_pixel_size(WIDTH as u32, HEIGHT as u32);
 
@@ -77,7 +74,7 @@ fn main() {
     };
     
     let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
-    let plot = make_plot_rayon(&cam, Arc::new(eval_mandelbrot));
+    let plot = make_plot(&cam, Arc::new(eval_mandelbrot));
 
     let img = make_image(&plot, grad);
     let _ = img.save("img.bmp");
