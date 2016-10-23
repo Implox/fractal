@@ -32,12 +32,11 @@ where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
         (0..HEIGHT).map(|_| 0.0).collect::<Vec<f32>>()
     }).collect::<Vec<Vec<f32>>>();
 
-    plot.par_iter_mut().enumerate().for_each(
+    plot.par_iter_mut().weight_max().enumerate().for_each(
         |(row_idx, mut row)| {
             let re = origin.re + p_size * (row_idx as f64);
             *row = 
-                (0..HEIGHT)
-                .map(|col_idx| {
+                (0..HEIGHT).map(|col_idx| {
                     let im = origin.im + p_size * (col_idx as f64);
                     let pt = Complex::new(re, im);
                     eval(pt, MAX_ITERS) })
@@ -68,9 +67,9 @@ fn main() {
             Stop::new(0.100, pix(  0, 255,   0)),
             Stop::new(0.105, pix(  0, 255, 255)),
             Stop::new(0.110, pix(  0,   0, 255)),
-            Stop::new(0.200, pix(255,   0,   0)),
+            Stop::new(0.200, pix(  0,   0,   0)),
         ];
-        Gradient::new(initial, stops).build_cache(10000)
+        Gradient::new(initial, stops).build_cache(1000)
     };
     
     let cam = Camera::new(Complex::new(-0.6, 0.0), -1.0);
