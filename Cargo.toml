@@ -7,3 +7,8 @@ authors = ["Impl0x <alexmflores@gmail.com>"]
 bmp = "0.1"
 num = "0.1"
 rayon = "0.4"
+
+[dependencies.clap]
+version = "2"
+default-features = true
+features = [ "unstable" ]
