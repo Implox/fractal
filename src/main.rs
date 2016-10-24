@@ -66,7 +66,7 @@ fn main() {
     let cam_re = value_t!(matches, "real", f64).unwrap_or_else(|_| -0.6);
     let cam_im = value_t!(matches, "imaginary", f64).unwrap_or_else(|_| 0.0);
     let zoom = value_t!(matches, "zoom", f64).unwrap_or_else(|_| -1.0);
-    let mut outfile = value_t_or_exit!(matches, "out_file", String);
+    let mut outfile = value_t_or_exit!(matches, "file", String);
     outfile.push_str(".bmp");
 
     let grad = {
