@@ -10,12 +10,12 @@ mod camera;
 mod fractal;
 mod render;
 
-use bmp::{Pixel};
+use bmp::Pixel;
 use num::complex::Complex;
 use std::sync::Arc;
 
 use gradient::{Gradient, Stop};
-use camera::{Camera};
+use camera::Camera;
 use render::*;
 use fractal::*;
 
@@ -55,7 +55,7 @@ fn main() {
         ];
         Gradient::new(initial, stops).build_cache(1000)
     };
-    
+
     let cam = Camera::new(Complex::new(cam_re, cam_im), zoom);
     let plot = make_plot(&cam, Arc::new(eval_mandelbrot), width, height);
 
