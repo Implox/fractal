@@ -4,12 +4,12 @@ use self::bmp::Pixel;
 use std::cmp;
 
 pub struct Stop {
-    pub offset: f32,
+    pub offset: f64,
     pub color: Pixel
 }
 
 impl Stop {
-    pub fn new(o: f32, c: Pixel) -> Stop {
+    pub fn new(o: f64, c: Pixel) -> Stop {
         Stop { offset: o, color: c }
     }
 }
@@ -32,18 +32,18 @@ impl Gradient {
         }
 
         let mut cache = Vec::with_capacity(cache_size);
-        let d = 1f32 / (cache_size as f32);
+        let d = 1f64 / (cache_size as f64);
         for t in 0..cache_size {
-            cache.push(self.get_color((t as f32) * d));
+            cache.push(self.get_color((t as f64) * d));
         }
 
         Gradient { initial: self.initial, stops: self.stops, cache: cache }
     }
 
-    pub fn get_color(&self, offset: f32) -> Pixel {
+    pub fn get_color(&self, offset: f64) -> Pixel {
         if self.cache != vec![] {
             let max_idx = self.cache.len() - 1;
-            let float_idx = offset * (self.cache.len() as f32);
+            let float_idx = offset * (self.cache.len() as f64);
             let base_idx = cmp::min(float_idx.floor() as usize, max_idx);
             if base_idx < max_idx {
                 let base_hue = self.cache[base_idx];
@@ -73,20 +73,14 @@ impl Gradient {
         }
     }
 
-    fn mix_color(a: Pixel, b: Pixel, amount: f32) -> Pixel {
-        fn mix(a: u8, a_scale: f32, b: u8, b_scale: f32) -> u8 {
-            (((a as f32) * a_scale) + ((b as f32) * b_scale)) as u8
+    fn mix_color(a: Pixel, b: Pixel, amount: f64) -> Pixel {
+        fn mix(a: u8, a_scale: f64, b: u8, b_scale: f64) -> u8 {
+            (((a as f64) * a_scale) + ((b as f64) * b_scale)) as u8
         }
         let af = 1.0 - amount;
         let bf = amount;
         Pixel { r: mix(a.r, af, b.r, bf),
                 g: mix(a.g, af, b.g, bf),
                 b: mix(a.b, af, b.b, bf) }
-    }
-
-    pub fn _get_color(&self, iters: f32) -> Pixel {
-        //let scale = (CACHE_SIZE as f32) / self.period;
-        let index = iters; //% self.period;
-        return self.cache[index as usize];
     }
 }

@@ -1,66 +1,37 @@
 #[macro_use]
 extern crate clap;
-
-extern crate num;
+#[macro_use]
 extern crate bmp;
+extern crate num;
 extern crate rayon;
 
 mod gradient;
-mod render;
+mod camera;
 mod fractal;
-mod cli;
+mod render;
 
-use bmp::{Image, Pixel};
-use rayon::par_iter::*;
+use bmp::{Pixel};
 use num::complex::Complex;
-use gradient::{Gradient, Stop};
-use render::{Camera};
-use fractal::*;
-use cli::{get_app};
 use std::sync::Arc;
 
-const MAX_ITERS:u32 = 1000;
-
-fn pix(r: u8, g: u8, b: u8) -> Pixel {
-    Pixel { r: r, g: g, b: b }
-}
-
-fn make_plot<F>(cam: &Camera, eval: Arc<F>, width: usize, height: usize) -> Vec<Vec<f32>> 
-where F: 'static + Send + Sync + Fn(Complex<f64>, u32) -> f32 {
-    let (origin, p_size) = cam.find_origin_and_pixel_size(width as u32, height as u32);
-
-    let mut plot = (0..width).map(|_| {
-        (0..height).map(|_| 0.0).collect::<Vec<f32>>()
-    }).collect::<Vec<Vec<f32>>>();
-
-    plot.par_iter_mut().weight_max().enumerate().for_each(
-        |(row_idx, mut row)| {
-            let re = origin.re + p_size * (row_idx as f64);
-            *row = 
-                (0..height).map(|col_idx| {
-                    let im = origin.im + p_size * (col_idx as f64);
-                    let pt = Complex::new(re, im);
-                    eval(pt, MAX_ITERS) })
-                .collect();
-    });
-
-    return plot;
-}
-
-fn make_image(plot: &Vec<Vec<f32>>, grad: Gradient, width: usize, height: usize) -> Image {
-    let mut img = Image::new(width as u32, height as u32);
-    for y in 0..height {
-        for x in 0..width {
-            let hue = plot[x][y];
-            let pixel = grad.get_color(hue);
-            img.set_pixel(x as u32, y as u32, pixel);
-        }
-    }
-    return img;
-}
+use gradient::{Gradient, Stop};
+use camera::{Camera};
+use render::*;
+use fractal::*;
 
 fn main() {
-    let matches = get_app().get_matches();
+    let matches = clap_app!(fractal =>
+        (version: "1.0")
+        (author: "A. Flores")
+        (about: "VERY fast fractal generation at incredible hihg speed")
+        (@arg width: -w --width +takes_value +required "Sets the width of the output image in pixels")
+        (@arg height: -h --height +takes_value +required "Sets the height of the output image in pixels")
+        (@arg real: -re --real +takes_value "Sets the position of the camera on the real axis (default: -1.6)")
+        (@arg imaginary: -im --imag +takes_value "Sets the position of the camera on the imaginary axis (default: 0.0)")
+        (@arg zoom: -z --zoom +takes_value "Sets the zoom level of the camera (default: -1.0)")
+        (@arg file: -o --file +takes_value +required "The name of the file to output without extension (as a bmp)"))
+        .get_matches();
+
     let width = value_t_or_exit!(matches, "width", usize);
     let height = value_t_or_exit!(matches, "height", usize);
     let cam_re = value_t!(matches, "real", f64).unwrap_or_else(|_| -0.6);
@@ -70,14 +41,17 @@ fn main() {
     outfile.push_str(".bmp");
 
     let grad = {
-        let initial = pix(0, 0, 0);
+        let initial = px!(0, 0, 0);
         let stops = vec![
-            Stop::new(0.025, pix(255,   0,   0)),
-            Stop::new(0.050, pix(255, 255,   0)),
-            Stop::new(0.100, pix(  0, 255,   0)),
-            Stop::new(0.105, pix(  0, 255, 255)),
-            Stop::new(0.110, pix(  0,   0, 255)),
-            Stop::new(0.200, pix(  0,   0,   0)),
+            Stop::new(0.025, px!(255,   0,   0)),
+            Stop::new(0.050, px!(255, 255,   0)),
+            Stop::new(0.100, px!(  0, 255,   0)),
+            Stop::new(0.105, px!(  0, 255, 255)),
+            Stop::new(0.150, px!(  0,   0, 255)),
+            Stop::new(0.250, px!(  0, 255,   0)),
+            Stop::new(0.300, px!(255, 255,   0)),
+            Stop::new(0.350, px!(255,   0,   0)),
+            Stop::new(1.000, px!(  0,   0,   0)),
         ];
         Gradient::new(initial, stops).build_cache(1000)
     };
